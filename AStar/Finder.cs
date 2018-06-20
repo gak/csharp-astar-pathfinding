@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Slowchop
 {
-    abstract class Finder<T>
+    public abstract class Finder<T>
     {
         protected ICallback<T> Callback;
 
@@ -14,7 +11,6 @@ namespace Slowchop
             Callback = callback;
         }
 
-        internal abstract List<T> Search(Graph<T> graph, T from, T to);
-
+        public abstract IEnumerable<T> Search(Graph<T> graph, T from, T to);
     }
 }

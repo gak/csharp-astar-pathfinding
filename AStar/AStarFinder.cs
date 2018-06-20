@@ -1,27 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace Slowchop
 {
-    internal class AStarFinder<T> : Finder<T>
+    public class AStarFinder<T> : Finder<T>
     {
         private readonly Dictionary<T, NodeCosts> _costs = new Dictionary<T, NodeCosts>();
-        public List<T> ClosedList = new List<T>();
+        private readonly List<T> _closedList = new List<T>();
         private T _dst;
         private T _focusedNode;
         private Graph<T> _graph;
-        public List<T> OpenList = new List<T>();
+        private readonly List<T> _openList = new List<T>();
         private NodeCosts _parentCost;
 
         private States _state;
 
-        internal override List<T> Search(Graph<T> graph, T src, T dst)
+        public override IEnumerable<T> Search(Graph<T> graph, T src, T dst)
         {
             // Quick check to see if destination has neighbours
-            List<T> neighbours;
-            if (!graph.links.TryGetValue(dst, out neighbours) || !neighbours.Any())
+            if (!graph.Links.TryGetValue(dst, out var neighbours) || !neighbours.Any())
             {
                 _state = States.NoSolution;
                 return SearchResults();
@@ -36,20 +34,15 @@ namespace Slowchop
             return SearchResults();
         }
 
-        public List<T> SearchResults()
+        private IEnumerable<T> SearchResults()
         {
-            if (_state == States.Found)
-            {
-                return OpenListToPath();
-            }
-
-            return null;
+            return _state == States.Found ? OpenListToPath() : null;
         }
 
-        public bool SearchStep()
+        private bool SearchStep()
         {
-            OpenList.Remove(_focusedNode);
-            ClosedList.Add(_focusedNode);
+            _openList.Remove(_focusedNode);
+            _closedList.Add(_focusedNode);
 
             if (_focusedNode.Equals(_dst))
             {
@@ -57,8 +50,7 @@ namespace Slowchop
                 return false;
             }
 
-            List<T> neighbours;
-            if (!_graph.links.TryGetValue(_focusedNode, out neighbours))
+            if (!_graph.Links.TryGetValue(_focusedNode, out var neighbours))
             {
                 neighbours = new List<T>();
             }
@@ -66,7 +58,7 @@ namespace Slowchop
             // Add costs dst each neighbour that is not closed
             CalculateNeighborCosts(neighbours);
 
-            if (!OpenList.Any())
+            if (!_openList.Any())
             {
                 _state = States.NoSolution;
                 return false;
@@ -76,81 +68,82 @@ namespace Slowchop
             return true;
         }
 
-        private void CalculateNeighborCosts(List<T> neighbours)
+        private void CalculateNeighborCosts(IEnumerable<T> neighbours)
         {
-            foreach (T node in neighbours)
+            foreach (var node in neighbours)
             {
-                if (ClosedList.Contains(node))
+                if (_closedList.Contains(node))
                     continue;
 
-                NodeCosts cost = null;
-                float g = _parentCost.g + Callback.ApproximateDistance(_focusedNode, node) + _graph.costs[node];
-                
-                if (OpenList.Contains(node))
+                NodeCosts cost;
+                var g = _parentCost.G + Callback.ApproximateDistance(_focusedNode, node) + _graph.Costs[node];
+
+                if (_openList.Contains(node))
                 {
                     cost = _costs[node];
-                    if (g < cost.g)
+                    if (g < cost.G)
                     {
-                        cost.g = g;
+                        cost.G = g;
                     }
                 }
                 else
                 {
                     cost = new NodeCosts
                     {
-                        g = g,
-                        h = Callback.ApproximateDistance(node, _dst)
+                        G = g,
+                        H = Callback.ApproximateDistance(node, _dst)
                     };
                     _costs[node] = cost;
 
-                    OpenList.Add(node);
+                    _openList.Add(node);
                 }
 
-                cost.parent = _focusedNode;
-                cost.f = cost.g + cost.h;
+                cost.Parent = _focusedNode;
+                cost.F = cost.G + cost.H;
             }
         }
 
         private T GetBestOpenNode()
         {
-            T bestNode = OpenList[0];
-            NodeCosts bestCost = _costs[bestNode];
+            var bestNode = _openList[0];
+            var bestCost = _costs[bestNode];
 
-            foreach (T node in OpenList)
+            foreach (var node in _openList)
             {
-                NodeCosts cost = _costs[node];
+                var cost = _costs[node];
 
-                if (cost.f >= bestCost.f)
+                if (cost.F >= bestCost.F)
                     continue;
 
                 bestNode = node;
                 bestCost = cost;
             }
+
             return bestNode;
         }
 
-        public void SearchStart(Graph<T> graph, T src, T dst)
+        private void SearchStart(Graph<T> graph, T src, T dst)
         {
             if (Callback == null)
             {
                 throw new Exception("callback not defined");
             }
 
-            this._graph = graph;
-            this._dst = dst;
+            _graph = graph;
+            _dst = dst;
 
             // Clear out vars
             _state = States.Searching;
-            OpenList.Clear();
-            ClosedList.Clear();
+            _openList.Clear();
+            _closedList.Clear();
             _costs.Clear();
 
             // Add starting node to open list and add costs
-            OpenList.Add(src);
+            _openList.Add(src);
             _parentCost = new NodeCosts();
-            _parentCost.g = 0;
-            _parentCost.h = Callback.ApproximateDistance(src, dst);
-            _parentCost.f = _parentCost.h;
+            _parentCost.G = 0;
+            _parentCost.H = Callback.ApproximateDistance(src, dst);
+            _parentCost.F = _parentCost.H;
             _costs[src] = _parentCost;
             _focusedNode = src;
         }
@@ -159,13 +152,13 @@ namespace Slowchop
         {
             var path = new List<T>();
 
-            T node = _focusedNode;
-            NodeCosts cost = _costs[node];
+            var node = _focusedNode;
+            var cost = _costs[node];
             path.Add(node);
 
-            while (cost.parent != null)
+            while (cost.Parent != null)
             {
-                node = cost.parent;
+                node = cost.Parent;
                 path.Add(node);
                 cost = _costs[node];
             }
@@ -175,29 +168,28 @@ namespace Slowchop
             return path;
         }
 
-
-        internal class NodeCosts
+        private class NodeCosts
         {
             /**
              * Sum
              */
-            public float f;
+            public float F;
 
             /**
              * The movement cost to move from the starting point A to a given square on the grid, following the path
              * generated to get there.
              */
-            public float g;
+            public float G;
 
             /**
              * The estimated movement cost to move from that given square on the grid to the final destination.
             */
-            public float h;
+            public float H;
 
             /**
              * Parent Node
              */
-            public T parent;
+            public T Parent;
         }
     }
 }
