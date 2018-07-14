@@ -1,4 +1,4 @@
-namespace Slowchop
+namespace Slowchop.Pathfinding
 {
     internal enum States
     {

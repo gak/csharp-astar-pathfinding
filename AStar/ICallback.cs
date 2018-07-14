@@ -1,4 +1,4 @@
-namespace Slowchop
+namespace Slowchop.Pathfinding
 {
     public interface ICallback<T>
     {

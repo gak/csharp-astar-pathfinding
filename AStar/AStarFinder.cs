@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Slowchop
+namespace Slowchop.Pathfinding
 {
     public class AStarFinder<T> : Finder<T>
     {
@@ -19,7 +19,8 @@ namespace Slowchop
         public override IEnumerable<T> Search(Graph<T> graph, T src, T dst)
         {
             // Quick check to see if destination has neighbours
-            if (!graph.Links.TryGetValue(dst, out var neighbours) || !neighbours.Any())
+            List<T> neighbours;
+            if (!graph.Links.TryGetValue(dst, out neighbours) || !neighbours.Any())
             {
                 _state = States.NoSolution;
                 return SearchResults();
@@ -50,7 +51,8 @@ namespace Slowchop
                 return false;
             }
 
-            if (!_graph.Links.TryGetValue(_focusedNode, out var neighbours))
+            List<T> neighbours;
+            if (!_graph.Links.TryGetValue(_focusedNode, out neighbours))
             {
                 neighbours = new List<T>();
             }

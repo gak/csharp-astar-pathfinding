@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Slowchop
+namespace Slowchop.Pathfinding
 {
     public abstract class Finder<T>
     {

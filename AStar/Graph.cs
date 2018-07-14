@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Slowchop
+namespace Slowchop.Pathfinding
 {
     public class Graph<T>
     {
@@ -37,7 +37,8 @@ namespace Slowchop
                 return;
             }
 
-            if (!Links.TryGetValue(from, out var toList))
+            List<T> toList;
+            if (!Links.TryGetValue(from, out toList))
             {
                 toList = new List<T>();
             }
